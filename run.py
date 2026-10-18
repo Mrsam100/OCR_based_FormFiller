@@ -20,9 +20,9 @@ def main():
     url = f"http://{host}:{port}"
     
     print("-" * 65)
-    print(f"[*] Web Server URL:         {url}")
-    print(f"[*] Generic Master Password: BankShield@2026")
-    print(f"[*] Native OCR Engine:       Windows Media OCR + OpenCV Preprocessing")
+    print(f"[*] Web Server URL:   {url}")
+    print("[*] Access Mode:      Direct / Open (No Password Required)")
+    print("[*] Native OCR Engine: Windows Media OCR + OpenCV Preprocessing")
     print("-" * 65)
     
     # Try opening default browser

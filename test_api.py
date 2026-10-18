@@ -32,11 +32,10 @@ def run_tests():
         assert len(samples_data["samples"]) >= 5
         print(f"[OK] 3. Samples endpoint returned {len(samples_data['samples'])} sample passbooks")
 
-    # 4. Load & Scan Sample (SBI)
+    # 4. Load & Scan Sample (SBI) - Open Access without password
     req = urllib.request.Request(
         f"{BASE_URL}/api/samples/load/sbi",
-        data=b"",
-        headers={"Authorization": f"Bearer {token}"}
+        data=b""
     )
     with urllib.request.urlopen(req) as res:
         ocr_result = json.loads(res.read().decode())
@@ -54,31 +53,25 @@ def run_tests():
         print(f"      - Time:   {ocr_result['processing_time_ms']} ms")
 
     # 5. Verify Session Profile Vault
-    req = urllib.request.Request(
-        f"{BASE_URL}/api/profile",
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    req = urllib.request.Request(f"{BASE_URL}/api/profile")
     with urllib.request.urlopen(req) as res:
         prof_data = json.loads(res.read().decode())
         assert prof_data["profile"]["account_number"] == "31984572019"
         print("[OK] 5. Session profile vault correctly holds active user details")
 
     # 6. Verify Audit Trail
-    req = urllib.request.Request(
-        f"{BASE_URL}/api/auth/audit",
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    req = urllib.request.Request(f"{BASE_URL}/api/auth/audit")
     with urllib.request.urlopen(req) as res:
         audit_data = json.loads(res.read().decode())
         assert len(audit_data["audit_trail"]) > 0
         print(f"[OK] 6. Security audit trail verified ({len(audit_data['audit_trail'])} events logged)")
 
-    # 7. Frontend UI check
+    # 7. Frontend UI check - Verify password lock modal is completely removed
     with urllib.request.urlopen(f"{BASE_URL}/") as res:
         html = res.read().decode()
         assert "AutoBankFill" in html
-        assert "BankShield@2026" in html
-        print("[OK] 7. Frontend index.html served with 200 OK")
+        assert "lockScreenModal" not in html
+        print("[OK] 7. Frontend index.html served directly without password prompt")
 
     print("\n[SUCCESS] ALL TESTS PASSED!")
 

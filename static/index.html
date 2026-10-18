@@ -24,24 +24,16 @@
     </div>
 
     <div class="header-actions">
-      <div class="security-badge" title="Session is secured with cryptographic vault authentication">
-        <span>🛡️</span> Vault Protected
-      </div>
-
-      <div class="lock-timer-badge" title="Auto-locks on inactivity">
-        <span>⏱️</span> <span id="autoLockTimerText">5:00</span>
+      <div class="security-badge" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;" title="Local & Private OCR Engine Ready">
+        <span>✓</span> Ready
       </div>
 
       <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Toggle Light/Dark Theme">
         🌓
       </button>
 
-      <button id="lockVaultBtn" class="btn btn-secondary btn-sm" title="Lock access immediately">
-        🔒 Lock
-      </button>
-
-      <button id="panicWipeBtn" class="btn btn-danger btn-sm" title="Clear all stored banking data and session immediately">
-        ⚠️ Wipe Data
+      <button id="panicWipeBtn" class="btn btn-secondary btn-sm" title="Clear all loaded banking data and start fresh">
+        🔄 Reset All
       </button>
     </div>
   </header>
@@ -65,7 +57,7 @@
       </button>
       <button class="step-tab" data-step="4">
         <span class="step-num">4</span>
-        <span>Security & Audit</span>
+        <span>Activity & Info</span>
       </button>
     </nav>
 
@@ -313,28 +305,25 @@
     <!-- STEP 4: Security & Audit Logs -->
     <section class="step-pane" data-step="4">
       <div class="grid-2">
-        <!-- Master Password Management -->
+        <!-- Privacy & Local Engine Info -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title"><span>🔐</span> Generic Master Password Settings</h2>
+            <h2 class="card-title"><span>🛡️</span> Privacy & Local Architecture</h2>
           </div>
-          <div class="alert alert-info">
-            Default Master Password: <strong>BankShield@2026</strong>. You can update this to your own custom passphrase.
+          <div class="alert alert-success">
+            <strong>Direct Access Active:</strong> All features are immediately available without any password barrier.
           </div>
-          <form id="changePasswordForm" style="display:flex; flex-direction:column; gap:1rem;">
-            <div class="field-group">
-              <label class="field-label">Current Master Password</label>
-              <input type="password" id="currentPassInput" class="field-input" required placeholder="Current Password">
+          <div style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; display:flex; flex-direction:column; gap:0.75rem;">
+            <div>
+              <strong>🔒 Zero-Leak Privacy:</strong> Your sensitive passbook photos, account numbers, and personal details are processed locally on your device or directly inside your web browser.
             </div>
-            <div class="field-group">
-              <label class="field-label">New Master Password (min 6 characters)</label>
-              <input type="password" id="newPassInput" class="field-input" required placeholder="New Password">
+            <div>
+              <strong>⚡ Instant Dual-Engine OCR:</strong> Uses local hardware-accelerated Windows Media OCR on desktop and WebAssembly Tesseract.js when accessed via cloud/Vercel.
             </div>
-            <div id="changePassMsg"></div>
-            <button type="submit" class="btn btn-primary" style="align-self:flex-start;">
-              Update Master Password
-            </button>
-          </form>
+            <div>
+              <strong>🏦 Auto-Fill & Print:</strong> Automatically populates 6 standard bank forms and formats them as official printable paper slips.
+            </div>
+          </div>
         </div>
 
         <!-- Audit Trail -->
@@ -353,38 +342,6 @@
     </section>
 
   </main>
-
-  <!-- MODAL: Master Password Lock Screen -->
-  <div class="modal-overlay active" id="lockScreenModal">
-    <div class="modal-box lock-screen-box">
-      <div class="lock-screen-icon">🛡️</div>
-      <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.35rem;">Security Vault Locked</h2>
-      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1.5rem;">
-        Enter the generic master password to unlock your passbook OCR and automatic form filler.
-      </p>
-
-      <form id="loginForm" style="text-align:left;">
-        <div class="field-group" style="margin-bottom:1rem;">
-          <label class="field-label">Generic Master Password</label>
-          <input type="password" id="masterPasswordInput" class="field-input" placeholder="Enter master password" required autofocus>
-        </div>
-
-        <div id="loginErrorMsg" class="alert alert-warning" style="display:none; font-size:0.82rem; margin-bottom:1rem;"></div>
-
-        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width:100%; margin-bottom:0.75rem;">
-          Unlock Vault & Proceed
-        </button>
-
-        <button type="button" id="fillDemoPasswordBtn" class="btn btn-secondary btn-sm" style="width:100%;">
-          ⚡ Fill Demo Password (BankShield@2026)
-        </button>
-      </form>
-
-      <div style="margin-top:1.25rem; font-size:0.75rem; color:var(--text-light); text-align:center;">
-        🔒 High Security Zero-Leak Architecture | Offline Processing
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL: Webcam Viewfinder -->
   <div class="modal-overlay" id="webcamModal">

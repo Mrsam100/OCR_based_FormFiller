@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoBankFill | Automated Bank Passbook OCR & Form Filling System</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/print.css" media="print">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">🏛️</div>
+      <div>
+        <div class="brand-title">AutoBankFill</div>
+        <div class="brand-subtitle">Automated Bank Passbook OCR & Form Filling System</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="security-badge" title="Session is secured with cryptographic vault authentication">
+        <span>🛡️</span> Vault Protected
+      </div>
+
+      <div class="lock-timer-badge" title="Auto-locks on inactivity">
+        <span>⏱️</span> <span id="autoLockTimerText">5:00</span>
+      </div>
+
+      <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Toggle Light/Dark Theme">
+        🌓
+      </button>
+
+      <button id="lockVaultBtn" class="btn btn-secondary btn-sm" title="Lock access immediately">
+        🔒 Lock
+      </button>
+
+      <button id="panicWipeBtn" class="btn btn-danger btn-sm" title="Clear all stored banking data and session immediately">
+        ⚠️ Wipe Data
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Stepper Navigation -->
+    <nav class="stepper-nav no-print">
+      <button class="step-tab active" data-step="1">
+        <span class="step-num">1</span>
+        <span>Upload Passbook & OCR</span>
+      </button>
+      <button class="step-tab" data-step="2">
+        <span class="step-num">2</span>
+        <span>Verified Profile Vault</span>
+      </button>
+      <button class="step-tab" data-step="3">
+        <span class="step-num">3</span>
+        <span>Auto-Fill Bank Forms</span>
+      </button>
+      <button class="step-tab" data-step="4">
+        <span class="step-num">4</span>
+        <span>Security & Audit</span>
+      </button>
+    </nav>
+
+    <!-- STEP 1: Upload Passbook & OCR Scan -->
+    <section class="step-pane active" data-step="1">
+      <div class="grid-2">
+        <!-- Left: Upload & Camera & Sample Gallery -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title"><span>📷</span> Passbook Ingestion & Scan</h2>
+              <button id="openCameraBtn" class="btn btn-secondary btn-sm">
+                📸 Use Webcam
+              </button>
+            </div>
+
+            <!-- Drag and drop zone -->
+            <div class="dropzone" id="passbookDropzone">
+              <input type="file" id="passbookFileInput" class="file-input" accept="image/png,image/jpeg,image/jpg,image/webp">
+              <div class="dropzone-icon">📥</div>
+              <div class="dropzone-text">Drop your Bank Passbook here</div>
+              <div class="dropzone-subtext">or click to browse from device (PNG, JPG, WEBP)</div>
+              <div style="margin-top:1rem; position:relative; z-index:10; display:flex; align-items:center; justify-content:center; gap:0.4rem; flex-wrap:wrap;">
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Don't have a passbook? Test with:</span>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); OCRClient.loadSample('sbi')">SBI</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); OCRClient.loadSample('hdfc')">HDFC</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); OCRClient.loadSample('icici')">ICICI</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); OCRClient.loadSample('pnb')">PNB</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); OCRClient.loadSample('axis')">Axis</button>
+              </div>
+            </div>
+
+            <!-- OCR Progress Banner -->
+            <div id="ocrStatusBox" class="alert alert-info" style="display:none; margin-top:1rem;">
+              <span id="ocrStatusText">Processing Passbook...</span>
+            </div>
+
+            <!-- Sample Passbooks for 1-Click Testing -->
+            <div class="samples-row">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+                  ⚡ Quick Test: Pre-Generated Sample Passbooks
+                </label>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Click any bank to test immediately</span>
+              </div>
+              <div class="samples-grid" id="samplePassbooksGrid">
+                <!-- Dynamically loaded -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Scan Inspection & Extracted Summary -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title"><span>🔍</span> Document Scan & Extracted Entity Preview</h2>
+              <button id="proceedToFormsBtn" class="btn btn-primary btn-sm" disabled>
+                Auto-Fill Forms →
+              </button>
+            </div>
+
+            <div class="preview-container" id="passbookPreviewContainer">
+              <img id="passbookPreviewImg" class="preview-img" style="display:none;" alt="Passbook Scan">
+              <div id="passbookPreviewPlaceholder" style="color:var(--text-muted); text-align:center; padding:2rem;">
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;">📄</div>
+                <div>No passbook loaded yet.</div>
+                <div style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
+                  Upload an image or select a sample bank above.
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick extraction details preview -->
+            <div style="margin-top:1.25rem;">
+              <div style="font-size:0.85rem; font-weight:700; margin-bottom:0.65rem; color:var(--text-muted); text-transform:uppercase;">
+                OCR Recognized Lines
+              </div>
+              <div id="rawOcrTranscriptBox" style="background:var(--bg-main); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem; font-family:monospace; font-size:0.8rem; max-height:140px; overflow-y:auto; white-space:pre-wrap; color:var(--text-main);">
+                Awaiting OCR scan...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: Verified Profile Vault -->
+    <section class="step-pane" data-step="2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title"><span>🏦</span> Verified Banking Identity Vault</h2>
+            <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">
+              Information extracted by OCR and stored in your authenticated local session.
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="toggleMaskBtn" class="btn btn-secondary btn-sm">
+              👁️ Reveal Numbers
+            </button>
+            <button id="copyProfileTextBtn" class="btn btn-secondary btn-sm">
+              📋 Copy All
+            </button>
+            <button id="exportProfileJsonBtn" class="btn btn-secondary btn-sm">
+              💾 Export JSON
+            </button>
+            <button id="saveProfileEditsBtn" class="btn btn-primary btn-sm">
+              💾 Save Changes
+            </button>
+          </div>
+        </div>
+
+        <div class="fields-grid">
+          <div class="field-group">
+            <label class="field-label">Bank Name <span class="field-conf">Verified 99%</span></label>
+            <input type="text" id="prof_bank_name" class="field-input" placeholder="Bank Name">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Account Holder Name <span class="field-conf">Verified 98%</span></label>
+            <input type="text" id="prof_account_holder" class="field-input" placeholder="Holder Name">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Primary Account Number <span class="field-conf">Verified 99%</span></label>
+            <input type="text" id="prof_account_number" class="field-input" placeholder="Account Number">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">IFSC Code <span class="field-conf">Verified 99%</span></label>
+            <input type="text" id="prof_ifsc_code" class="field-input" placeholder="IFSC Code">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Customer ID / CIF <span class="field-conf">Verified 96%</span></label>
+            <input type="text" id="prof_cif_number" class="field-input" placeholder="CIF Number">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">MICR Code <span class="field-conf">Verified 95%</span></label>
+            <input type="text" id="prof_micr_code" class="field-input" placeholder="9-digit MICR">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Branch Name <span class="field-conf">Verified 95%</span></label>
+            <input type="text" id="prof_branch_name" class="field-input" placeholder="Branch Name">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Branch Code / SOL ID <span class="field-conf">Verified 94%</span></label>
+            <input type="text" id="prof_branch_code" class="field-input" placeholder="Branch Code">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Account Type</label>
+            <input type="text" id="prof_account_type" class="field-input" placeholder="Account Type">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Mobile Number</label>
+            <input type="text" id="prof_mobile" class="field-input" placeholder="Mobile Number">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Email Address</label>
+            <input type="text" id="prof_email" class="field-input" placeholder="Email Address">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Issue / Opening Date</label>
+            <input type="text" id="prof_issue_date" class="field-input" placeholder="Date">
+          </div>
+
+          <div class="field-group" style="grid-column: span 2;">
+            <label class="field-label">Registered Permanent Address</label>
+            <input type="text" id="prof_address" class="field-input" placeholder="Permanent Address">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: Auto-Fill Bank Forms Hub -->
+    <section class="step-pane" data-step="3">
+      <div class="card no-print" style="margin-bottom:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 class="card-title"><span>⚡</span> Instant Bank Form Auto-Filler</h2>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">
+              Select any bank application form below. The engine maps your saved passbook details in real-time.
+            </div>
+          </div>
+          <div style="display:flex; gap:0.65rem;">
+            <button id="triggerAutoFillBtn" class="btn btn-success">
+              ⚡ Auto-Fill Form Now
+            </button>
+            <button id="printFormBtn" class="btn btn-primary">
+              🖨️ Print / Download Form (PDF)
+            </button>
+          </div>
+        </div>
+
+        <!-- Form Pills Selector -->
+        <div class="form-selector-tabs" style="margin-top:1.25rem; margin-bottom:0;">
+          <button class="form-pill active" data-form-id="account_opening">
+            1. Account Opening Form
+          </button>
+          <button class="form-pill" data-form-id="funds_transfer">
+            2. NEFT / RTGS Pay-in Slip
+          </button>
+          <button class="form-pill" data-form-id="cheque_debit">
+            3. Cheque & Card Request
+          </button>
+          <button class="form-pill" data-form-id="kyc_update">
+            4. Re-KYC Update Form
+          </button>
+          <button class="form-pill" data-form-id="fixed_deposit">
+            5. Fixed Deposit Application
+          </button>
+          <button class="form-pill" data-form-id="portal_simulator">
+            6. External Portal Simulator
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Paper Form Container -->
+      <div id="activeFormContainer">
+        <!-- Rendered by FormsManager -->
+      </div>
+
+      <!-- External Autofill Bookmarklet Utility -->
+      <div class="card no-print" style="margin-top:1.5rem;">
+        <div class="card-header">
+          <h3 class="card-title"><span>🌐</span> Universal Auto-Filler Bookmarklet</h3>
+          <button id="copyBookmarkletBtn" class="btn btn-secondary btn-sm">
+            📋 Copy Bookmarklet Code
+          </button>
+        </div>
+        <div style="font-size:0.88rem; color:var(--text-muted); line-height:1.6;">
+          Want to auto-fill your saved passbook details on <strong>any external bank website</strong>? Copy this bookmarklet and save it to your browser bookmarks bar or execute it in DevTools. It automatically searches matching input fields (account number, IFSC, name, branch) and injects your saved profile data!
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: Security & Audit Logs -->
+    <section class="step-pane" data-step="4">
+      <div class="grid-2">
+        <!-- Master Password Management -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><span>🔐</span> Generic Master Password Settings</h2>
+          </div>
+          <div class="alert alert-info">
+            Default Master Password: <strong>BankShield@2026</strong>. You can update this to your own custom passphrase.
+          </div>
+          <form id="changePasswordForm" style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="field-group">
+              <label class="field-label">Current Master Password</label>
+              <input type="password" id="currentPassInput" class="field-input" required placeholder="Current Password">
+            </div>
+            <div class="field-group">
+              <label class="field-label">New Master Password (min 6 characters)</label>
+              <input type="password" id="newPassInput" class="field-input" required placeholder="New Password">
+            </div>
+            <div id="changePassMsg"></div>
+            <button type="submit" class="btn btn-primary" style="align-self:flex-start;">
+              Update Master Password
+            </button>
+          </form>
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><span>📜</span> Security Audit Trail</h2>
+            <button id="refreshAuditBtn" class="btn btn-secondary btn-sm">
+              🔄 Refresh
+            </button>
+          </div>
+          <div id="auditTrailList" style="max-height:360px; overflow-y:auto;">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: Master Password Lock Screen -->
+  <div class="modal-overlay active" id="lockScreenModal">
+    <div class="modal-box lock-screen-box">
+      <div class="lock-screen-icon">🛡️</div>
+      <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.35rem;">Security Vault Locked</h2>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1.5rem;">
+        Enter the generic master password to unlock your passbook OCR and automatic form filler.
+      </p>
+
+      <form id="loginForm" style="text-align:left;">
+        <div class="field-group" style="margin-bottom:1rem;">
+          <label class="field-label">Generic Master Password</label>
+          <input type="password" id="masterPasswordInput" class="field-input" placeholder="Enter master password" required autofocus>
+        </div>
+
+        <div id="loginErrorMsg" class="alert alert-warning" style="display:none; font-size:0.82rem; margin-bottom:1rem;"></div>
+
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width:100%; margin-bottom:0.75rem;">
+          Unlock Vault & Proceed
+        </button>
+
+        <button type="button" id="fillDemoPasswordBtn" class="btn btn-secondary btn-sm" style="width:100%;">
+          ⚡ Fill Demo Password (BankShield@2026)
+        </button>
+      </form>
+
+      <div style="margin-top:1.25rem; font-size:0.75rem; color:var(--text-light); text-align:center;">
+        🔒 High Security Zero-Leak Architecture | Offline Processing
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Webcam Viewfinder -->
+  <div class="modal-overlay" id="webcamModal">
+    <div class="modal-box" style="max-width:640px;">
+      <div class="card-header">
+        <h3 class="card-title"><span>📸</span> Scan Physical Passbook with Camera</h3>
+        <button id="closeCameraBtn" class="btn btn-secondary btn-sm">✕ Close</button>
+      </div>
+      <div style="position:relative; background:#000; border-radius:8px; overflow:hidden; min-height:320px; display:flex; align-items:center; justify-content:center;">
+        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:420px; object-fit:cover;"></video>
+      </div>
+      <div style="display:flex; justify-content:center; margin-top:1.25rem;">
+        <button id="capturePhotoBtn" class="btn btn-primary" style="padding:0.75rem 2rem;">
+          📸 Capture & Run OCR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/security.js"></script>
+  <script src="/static/js/forms.js"></script>
+  <script src="/static/js/ocr_client.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

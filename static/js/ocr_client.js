@@ -129,14 +129,58 @@ const OCRClient = {
       const result = await res.json();
       if (res.ok && result.success) {
         this.onOCRSuccess(result);
+      } else if (result.fallback_needed && typeof Tesseract !== 'undefined') {
+        await this.runBrowserTesseract(file);
       } else {
         alert(result.detail || result.error || "OCR failed to process passbook.");
       }
     } catch (err) {
-      alert("Error uploading and processing passbook.");
+      if (typeof Tesseract !== 'undefined') {
+        await this.runBrowserTesseract(file);
+      } else {
+        alert("Error uploading and processing passbook.");
+      }
     } finally {
       this.isProcessing = false;
       this.hideOCRStatus();
+    }
+  },
+
+  async runBrowserTesseract(file) {
+    if (typeof Tesseract === 'undefined') {
+      alert("Browser OCR engine (Tesseract.js) is loading or unavailable.");
+      return;
+    }
+    this.showOCRStatus('<span class="spinner"></span> Running WebAssembly OCR in browser (Cloud/Vercel Mode)...');
+    try {
+      const workerResult = await Tesseract.recognize(file, 'eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            const pct = Math.round((m.progress || 0) * 100);
+            this.showOCRStatus(`<span class="spinner"></span> Reading Passbook in Browser (${pct}%)...`);
+          }
+        }
+      });
+      const rawText = workerResult.data.text;
+      this.showOCRStatus('<span class="spinner"></span> Validating & Extracting Banking Entities...');
+      
+      const res = await fetch("/api/ocr/parse-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...Security.getAuthHeader()
+        },
+        body: JSON.stringify({ raw_text: rawText })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        this.onOCRSuccess(data);
+      } else {
+        alert("Failed to parse extracted banking details.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Client-side OCR processing error: " + (e.message || e));
     }
   },
 

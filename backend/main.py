@@ -38,6 +38,9 @@ class ChangePasswordRequest(BaseModel):
 class ProfileSaveRequest(BaseModel):
     profile: Dict[str, Any]
 
+class ParseTextRequest(BaseModel):
+    raw_text: str
+
 def get_current_token(authorization: Optional[str] = Header(None)) -> str:
     if not authorization:
         raise HTTPException(status_code=401, detail="Authentication token required")
@@ -132,6 +135,19 @@ async def scan_passbook(file: UploadFile = File(...), token: str = Depends(get_c
         security_vault.store_profile(token, result["data"])
         security_vault._record_audit("USER_SCAN_COMPLETED", f"Processed upload '{file.filename}'", token)
     return result
+
+@app.post("/api/ocr/parse-text")
+async def parse_text(req: ParseTextRequest, token: str = Depends(get_current_token)):
+    lines = [l.strip() for l in req.raw_text.splitlines() if l.strip()]
+    parsed = parse_bank_details(req.raw_text, lines)
+    security_vault.store_profile(token, parsed)
+    security_vault._record_audit("CLIENT_OCR_PARSED", f"Parsed client-side OCR for {parsed.get('bank_name', 'Bank')}", token)
+    return {
+        "success": True,
+        "data": parsed,
+        "lines": lines,
+        "processing_time_ms": 15
+    }
 
 @app.post("/api/profile/save")
 async def save_profile(req: ProfileSaveRequest, token: str = Depends(get_current_token)):

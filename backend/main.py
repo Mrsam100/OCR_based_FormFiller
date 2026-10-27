@@ -1,10 +1,13 @@
 import os
 import io
+import time
+import random
+from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Header, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from backend.ocr_engine import process_passbook_image, HAS_WINOCR
 from backend.parser import parse_bank_details
@@ -43,6 +46,29 @@ class ProfileSaveRequest(BaseModel):
 
 class ParseTextRequest(BaseModel):
     raw_text: str
+
+class BiometricData(BaseModel):
+    verified: bool = True
+    method: str = "Aadhaar / Bank UIDAI Thumbprint Biometric"
+    token: str
+    match_score: str = "99.8%"
+    timestamp: Optional[str] = None
+
+class ApplicationSubmitRequest(BaseModel):
+    form_id: str
+    form_name: str
+    form_data: Dict[str, Any]
+    biometric_data: BiometricData
+    passbook_data: Optional[Dict[str, Any]] = None
+
+class OfficerDecisionRequest(BaseModel):
+    decision: str  # "APPROVED" or "REJECTED"
+    officer_name: str = "P. K. Sharma (Head Cashier & Verification Desk)"
+    officer_id: str = "BO-88214"
+    feedback: Optional[str] = None
+
+# Central In-Memory Application Queue for Counter 2
+APPLICATIONS_DB: List[Dict[str, Any]] = []
 
 def get_current_token(authorization: Optional[str] = Header(None)) -> str:
     token = authorization.replace("Bearer ", "").strip() if authorization else "public_session"
@@ -223,6 +249,89 @@ async def save_profile(req: ProfileSaveRequest, token: str = Depends(get_current
 async def get_profile(token: str = Depends(get_current_token)):
     profile = security_vault.get_profile(token)
     return {"profile": profile}
+
+# Counter 2 (Bank Officer Maker-Checker) Endpoints
+@app.post("/api/applications/submit")
+async def submit_application(req: ApplicationSubmitRequest, token: str = Depends(get_current_token)):
+    app_id = f"APP-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+    customer_name = req.form_data.get("account_holder") or (req.passbook_data.get("account_holder") if req.passbook_data else "Valued Customer")
+    bank_name = req.form_data.get("bank_name") or (req.passbook_data.get("bank_name") if req.passbook_data else "Bank")
+    account_number = req.form_data.get("account_number") or (req.passbook_data.get("account_number") if req.passbook_data else "")
+
+    bio_dict = req.biometric_data.model_dump()
+    if not bio_dict.get("timestamp"):
+        bio_dict["timestamp"] = datetime.now().strftime("%d %b %Y, %I:%M %p")
+
+    new_app = {
+        "id": app_id,
+        "token": token,
+        "form_id": req.form_id,
+        "form_name": req.form_name,
+        "form_data": req.form_data,
+        "passbook_data": req.passbook_data,
+        "biometric_data": bio_dict,
+        "customer_name": customer_name,
+        "bank_name": bank_name,
+        "account_number": account_number,
+        "submitted_at": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        "status": "PENDING_COUNTER_2",  # PENDING_COUNTER_2, APPROVED, REJECTED
+        "officer_decision": None
+    }
+    
+    # Prepend to list so newest is first
+    APPLICATIONS_DB.insert(0, new_app)
+    security_vault._record_audit("APP_FORWARDED_COUNTER2", f"Application {app_id} forwarded with thumbprint verification to Counter 2", token)
+
+    return {
+        "success": True,
+        "message": "Application forwarded to Counter 2 for Officer Review",
+        "application": new_app
+    }
+
+@app.get("/api/applications")
+async def get_applications():
+    return {
+        "success": True,
+        "count": len(APPLICATIONS_DB),
+        "applications": APPLICATIONS_DB
+    }
+
+@app.get("/api/applications/{app_id}")
+async def get_application_by_id(app_id: str):
+    app_item = next((a for a in APPLICATIONS_DB if a["id"] == app_id), None)
+    if not app_item:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return {"success": True, "application": app_item}
+
+@app.post("/api/applications/{app_id}/decision")
+async def record_officer_decision(app_id: str, req: OfficerDecisionRequest):
+    app_item = next((a for a in APPLICATIONS_DB if a["id"] == app_id), None)
+    if not app_item:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    decision_status = req.decision.upper()
+    if decision_status not in ["APPROVED", "REJECTED"]:
+        raise HTTPException(status_code=400, detail="Decision must be APPROVED or REJECTED")
+
+    app_item["status"] = decision_status
+    app_item["officer_decision"] = {
+        "decision": decision_status,
+        "officer_name": req.officer_name,
+        "officer_id": req.officer_id,
+        "feedback": req.feedback.strip() if req.feedback else None,
+        "decided_at": datetime.now().strftime("%d %b %Y, %I:%M %p")
+    }
+
+    audit_msg = f"Counter 2 Officer {req.officer_name} marked application {app_id} as {decision_status}"
+    if req.feedback:
+        audit_msg += f" with feedback: '{req.feedback}'"
+    security_vault._record_audit(f"OFFICER_{decision_status}", audit_msg, app_item.get("token"))
+
+    return {
+        "success": True,
+        "message": f"Application {app_id} successfully marked as {decision_status}",
+        "application": app_item
+    }
 
 # Serve Frontend static assets
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

@@ -1,65 +1,85 @@
-# AutoBankFill - Automated Bank Passbook OCR & Form Filling System
+# AutoBankFill - Paperless Bank Passbook OCR & Biometric Form Filling System
 
-An automated, privacy-first web application that extracts information from bank passbooks (or cancelled cheques) via OCR and instantly populates multiple official bank forms.
+An automated, paperless banking system that extracts customer details from bank passbooks via OCR, auto-fills official banking forms, validates identity with **Biometric Thumbprint Verification**, and seamlessly routes applications to **Counter 2 (Bank Officer Maker-Checker Desk)** for approval or feedback remarks — eliminating printing, ink signatures, and physical queues.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Modern Paperless Workflow (End-to-End)
 
-1. **High-Precision Passbook OCR Pipeline**:
-   - **Local & Offline Execution**: Uses hardware-accelerated Windows Media OCR via `winocr` and OpenCV. No private banking images are sent to third-party cloud APIs.
-   - **OpenCV Image Enhancement**: Automated deskewing, noise reduction, and CLAHE adaptive contrast optimization for scanned documents or photos.
-   - **Spatial Line & Entity Reconstruction**: Reconstructs multi-column passbook layouts and matches labels to values using 2D coordinate grouping.
-   - **Indian Banking Entity Parser**:
-     - **IFSC Code** with RBI prefix validation (e.g. `SBIN` -> State Bank of India, `HDFC` -> HDFC Bank, `ICIC` -> ICICI Bank, etc.)
-     - **Account Number** (9 to 18 digits)
-     - **Customer ID / CIF / CRN**
-     - **MICR Code** (9 digits)
-     - **Account Holder Name**
-     - **Branch Name & SOL ID / Branch Code**
-     - **Account Type** (Savings, Current, Salary, FD, RD)
-     - **Registered Address & PIN code**
-     - **Mobile Number & Email Address**
-     - **Passbook Issue / Opening Date**
+```
+[Customer Passbook Upload / Scan] 
+        │
+        ▼
+[Instant OCR & Entity Recognition] (Name, A/C, IFSC, CIF, MICR, Branch, Address)
+        │
+        ▼
+[Automatic Form Filling] (Account Opening, NEFT/RTGS, Cheque/Debit, Re-KYC, FD)
+        │
+        ▼
+[Biometric Thumbprint Attestation] 
+(Optical scanner captures minutiae ridges, binds UIDAI/e-KYC token BIO-UIDAI-XXXX)
+        │
+        ▼
+[Direct Auto-Forward to Counter 2 (No Printing • No Ink Signatures • No Queues)]
+        │
+        ▼
+[Counter 2: Bank Officer Maker-Checker Desk]
+ ├── ✅ 1-Click Approved ──► Digital Attestation Finalized & Customer Notified
+ └── ❌ Returned with Feedback ──► Officer writes feedback/reason ──► Customer edits & resubmits immediately
+```
 
-2. **Security & Generic Master Password**:
-   - **Generic Master Password**: Locks the application with a master passphrase (Default: `BankShield@2026`).
-   - **Vault Authentication**: Cryptographic token session storage with customizable auto-lock timer (default: 5 minutes of inactivity).
-   - **Sensitive Data Masking**: 1-click toggle to mask/unmask sensitive account and CIF numbers (`•••• •••• 2019`).
-   - **Panic Wipe Button**: Instantly terminates active session and clears all memory and profile traces.
-   - **Security Audit Trail**: Logs timestamped records of all scan, login, and autofill actions.
+---
 
-3. **Instant Bank Form Auto-Filling**:
-   - **Official Bank Form Templates**:
+## 🚀 Key Features
+
+1. **Dual-Engine OCR Pipeline**:
+   - **Local & Offline Execution**: Uses hardware-accelerated Windows Media OCR and WebAssembly Tesseract.js fallback for cloud/Vercel.
+   - **OpenCV Enhancement**: Deskewing, noise filtering, and CLAHE adaptive contrast optimization.
+   - **Indian Banking Entity Parser**: IFSC with RBI prefix validation, Account Number (9–18 digits), CIF/CRN, MICR, Branch Name, SOL ID, Account Type, Registered Address, Mobile, and Email.
+   - **Pre-Loaded Sample Passbooks**: Instant 1-click testing with pre-generated passbooks for SBI, HDFC, ICICI, PNB, and Axis Bank.
+
+2. **Paperless Form Auto-Filling**:
+   - **Official Form Templates**:
      1. *Savings / Current Account Opening Application*
      2. *NEFT / RTGS / IMPS Funds Transfer Pay-in Slip*
      3. *Cheque Book & Debit Card Request Form*
      4. *Periodic Re-KYC / Customer Profile Attestation*
      5. *Term / Fixed Deposit (FD) Creation Form*
      6. *External Netbanking Portal Simulator*
-   - **Visual Auto-Fill Highlighting**: Smooth animated transitions highlighting fields as they are populated.
-   - **Print & PDF Export**: Professional print stylesheet (`print.css`) that formats active forms as official paper bank slips complete with bank seals, branch stamps, and signature blocks.
-   - **Universal Autofill Bookmarklet**: Includes a generated JavaScript snippet to auto-fill forms on external third-party web portals.
+   - Dynamic animated auto-filling with field-by-field verification.
 
-4. **Multiple Capture Modes & Testing Gallery**:
-   - Drag-and-drop file upload (PNG, JPG, WEBP).
-   - Built-in webcam viewfinder for live camera capture.
-   - Pre-loaded Sample Passbooks for 5 major banks (SBI, HDFC, ICICI, PNB, Axis) with 1-click instant scanning.
+3. **Biometric Thumbprint Verification**:
+   - Eliminates physical paper printing and manual ink signatures.
+   - Interactive optical scanner simulation with laser ridge sweep, 500 DPI minutiae capture, and UIDAI/Bank biometric e-KYC score (99.8%).
+   - Cryptographically binds a unique attestation token (`BIO-UIDAI-YYYY-XXXX`) into the application payload.
+
+4. **Counter 2: Bank Officer Maker-Checker Desk**:
+   - Real-time queue displaying inbound customer submissions.
+   - Queue dashboard counters: Total, Awaiting Officer Action, Approved & Dispatched, and Returned with Feedback.
+   - Officer Application Inspection Modal with complete field-level verification.
+   - **1-Click Approval**: Instant clearance and digital certification.
+   - **Rejection with Feedback Remarks**: Officer writes specific feedback/instructions (with quick templates for account number mismatch, IFSC updates, KYC requirements) so the customer can correct and resubmit without standing in lines.
+
+5. **Security & Privacy Architecture**:
+   - **Direct Access**: No password friction barrier.
+   - **Zero-Leak Privacy**: Sensitive banking images processed locally.
+   - **Data Masking**: 1-click toggle to mask/reveal sensitive account numbers (`•••• •••• 2019`).
+   - **Panic Wipe**: Instantly purge cached profile data with one click.
+   - **Security Audit Trail**: Logs timestamped records of all scans, biometric attestations, officer approvals, and feedback dispatches.
 
 ---
 
-## 🚀 Quick Start
+## 🏁 Quick Start
 
 ### 1. Requirements
 - Python 3.10+
-- Windows 10/11 (with built-in Windows OCR)
+- Modern Web Browser (Chrome, Edge, Firefox)
 
-### 2. Run the Application
-Run the launcher:
+### 2. Launch Local Server
 ```powershell
 python run.py
 ```
-Or with uvicorn directly:
+Or directly using Uvicorn:
 ```powershell
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
@@ -67,4 +87,14 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 Open your browser to:
 [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-**Master Password:** `BankShield@2026` (or click *"⚡ Fill Demo Password"* on screen).
+---
+
+## 🧪 Testing the New Flow in 30 Seconds
+
+1. Click **SBI** (or any sample bank) on Step 1 to load sample passbook.
+2. Click **"Auto-Fill Forms →"** to enter Step 3.
+3. Click **"⚡ 1. Auto-Fill Form"** to populate all fields.
+4. Click **"👆 2. Verify Thumbprint"** and click the optical sensor pad to capture biometric attestation.
+5. Click **"🚀 3. Forward to Counter 2"**.
+6. Switch to Tab 4 (**Counter 2: Officer Desk**) to see your application in the queue.
+7. Click **"🔎 Review Application"** to either **Approve** or **Reject / Return with Feedback**.

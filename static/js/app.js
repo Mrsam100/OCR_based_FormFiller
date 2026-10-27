@@ -9,6 +9,8 @@ const App = {
     this.bindEvents();
     Security.init();
     OCRClient.init();
+    if (window.BiometricScanner) BiometricScanner.init();
+    if (window.Counter2) Counter2.init();
     this.initTheme();
 
     // Check if we have cached profile in storage
@@ -80,6 +82,22 @@ const App = {
         }
         FormsManager.animateAutoFill(this.currentProfile);
         this.notifySuccess("All form fields instantly auto-filled with verified passbook data!");
+      });
+    }
+
+    // Biometric Thumbprint button
+    const triggerThumbBtn = document.getElementById("triggerThumbprintBtn");
+    if (triggerThumbBtn) {
+      triggerThumbBtn.addEventListener("click", () => {
+        if (window.BiometricScanner) BiometricScanner.openScanner();
+      });
+    }
+
+    // Forward to Counter 2 button
+    const forwardBtn = document.getElementById("forwardCounter2Btn");
+    if (forwardBtn) {
+      forwardBtn.addEventListener("click", () => {
+        FormsManager.forwardToCounter2();
       });
     }
 
@@ -158,6 +176,9 @@ const App = {
 
     if (stepNumber === 3) {
       FormsManager.selectForm(FormsManager.currentFormId, this.currentProfile);
+    }
+    if (stepNumber === 4 && window.Counter2) {
+      Counter2.loadApplications();
     }
   },
 

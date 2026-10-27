@@ -728,3 +728,352 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Nav Counter Badge */
+.nav-counter-badge {
+  background: var(--danger);
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+/* Digital Biometric Attestation Block in Forms */
+.digital-attestation-container {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 2px dashed #cbd5e1;
+}
+
+.attestation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 840px) {
+  .attestation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.biometric-seal-card {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: #f8fafc;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: all 0.2s ease;
+}
+
+.biometric-seal-card.verified {
+  border-color: #059669;
+  background: #ecfdf5;
+}
+
+.biometric-seal-card.pending {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.bio-seal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #d1fae5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bio-seal-icon.pending {
+  background: #fef3c7;
+  font-size: 1.6rem;
+}
+
+.bio-seal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.bio-ref {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #334155;
+}
+
+.bio-seal-desc {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.bio-seal-note {
+  margin-top: 0.5rem;
+  font-size: 0.76rem;
+  color: #059669;
+  font-weight: 600;
+}
+
+/* Counter 2 Status Cards */
+.counter-status-card {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: #f8fafc;
+}
+
+.counter-status-card.approved {
+  border-color: #059669;
+  background: #ecfdf5;
+}
+
+.counter-status-card.rejected {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.counter-status-card.pending-queue {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.counter-badge {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.4rem;
+  display: inline-block;
+}
+
+.counter-badge.green { color: #059669; }
+.counter-badge.red { color: #dc2626; }
+.counter-badge.amber { color: #2563eb; }
+.counter-badge.gray { color: #64748b; }
+
+.counter-detail {
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.officer-feedback-quote {
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  background: #d1fae5;
+  border-left: 3px solid #059669;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: #065f46;
+  border-radius: 0 4px 4px 0;
+}
+
+.officer-feedback-alert {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  background: #fee2e2;
+  border-left: 3px solid #dc2626;
+  font-size: 0.85rem;
+  color: #991b1b;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Badge Tags */
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge-tag.green { background: #d1fae5; color: #065f46; }
+.badge-tag.red { background: #fee2e2; color: #991b1b; }
+.badge-tag.amber { background: #fef3c7; color: #92400e; }
+.badge-tag.gray { background: #e2e8f0; color: #475569; }
+
+.animate-pulse {
+  animation: pulseOpacity 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseOpacity {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Biometric Thumbprint Scanner Modal Components */
+.biometric-scanner-wrap {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.biometric-sensor-pad {
+  width: 140px;
+  height: 180px;
+  margin: 0 auto 1.5rem auto;
+  border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 4px solid #38bdf8;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+  transition: all 0.3s ease;
+}
+
+.biometric-sensor-pad:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 35px rgba(56, 189, 248, 0.45);
+}
+
+.biometric-sensor-pad.scanning {
+  border-color: #06b6d4;
+  box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
+}
+
+.biometric-sensor-pad.success {
+  border-color: #22c55e;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+}
+
+.biometric-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #38bdf8;
+  box-shadow: 0 0 14px 4px #06b6d4, 0 0 25px #38bdf8;
+  display: none;
+  animation: laserSweep 1.6s infinite ease-in-out;
+  z-index: 5;
+}
+
+@keyframes laserSweep {
+  0% { top: 5%; opacity: 0.8; }
+  50% { top: 90%; opacity: 1; }
+  100% { top: 5%; opacity: 0.8; }
+}
+
+.fingerprint-ridges-svg {
+  width: 90px;
+  height: 120px;
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.biometric-sensor-pad.success .fingerprint-ridges-svg {
+  stroke: #22c55e;
+}
+
+/* Counter 2: Officer Desk Layout */
+.officer-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .officer-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.officer-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.1rem;
+  text-align: center;
+}
+
+.officer-stat-num {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+
+.officer-stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.officer-queue-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.officer-queue-item:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.officer-queue-item.pending_counter_2 {
+  border-left: 4px solid var(--accent);
+}
+
+.officer-queue-item.approved {
+  border-left: 4px solid var(--success);
+}
+
+.officer-queue-item.rejected {
+  border-left: 4px solid var(--danger);
+}
+
+/* Feedback Chips */
+.feedback-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.feedback-chip {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+}
+
+.feedback-chip:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}

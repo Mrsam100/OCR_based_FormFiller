@@ -1,8 +1,133 @@
 /**
- * Bank Forms Definition, Field Mapping & Instant Auto-Fill Engine
+ * Bank Forms Definition, Field Mapping & Paperless Biometric Workflow Engine
+ * Eliminates physical paper printing and signatures by routing verified forms to Counter 2.
  */
 const FormsManager = {
   currentFormId: "account_opening",
+  currentBiometric: null,
+  activeApplication: null,
+
+  renderDigitalAttestationBlock(p) {
+    const profile = p || {};
+    const bio = this.currentBiometric;
+    const app = this.activeApplication;
+
+    let bioHtml = '';
+    if (bio && bio.verified) {
+      bioHtml = `
+        <div class="biometric-seal-card verified">
+          <div class="bio-seal-icon">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="#059669">
+              <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 5.76 1.48.24.14.32.44.18.68-.09.18-.28.31-.48.31zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.15-.3-.46-.15-.7.9-1.42 2.06-2.58 3.45-3.46.23-.15.54-.08.69.15.15.23.08.54-.15.69-1.27.81-2.33 1.88-3.16 3.18-.1.15-.27.23-.44.23zm10.02 12.06c-.05 0-.1 0-.15-.02-2.6-.57-4.52-2.1-5.72-4.55-.99-2.03-1.07-4.75-.24-8.08.06-.27.33-.43.6-.37.27.06.44.33.37.6-.78 3.13-.7 5.67.22 7.56 1.11 2.27 2.89 3.69 5.31 4.22.27.06.44.33.38.6-.05.23-.25.42-.47.42zm4.72-4.48c-.09 0-.19-.03-.27-.08-.23-.14-.3-.45-.16-.68 1.42-2.35 1.76-4.66 1.01-6.88-.67-1.98-2.36-3.35-4.4-3.56-.27-.03-.47-.27-.44-.54.03-.27.27-.47.54-.44 2.37.24 4.33 1.83 5.11 4.14.88 2.61.48 5.32-1.18 8.08-.09.15-.26.24-.43.24zm-6.22-4.3c-.7 0-1.28-.57-1.28-1.28v-2.06c0-1.14.93-2.06 2.06-2.06s2.06.93 2.06 2.06v2.06c0 .71-.58 1.28-1.28 1.28h-1.56zm.78-4.34c-.58 0-1.06.48-1.06 1.06v2.06c0 .15.12.28.28.28h1.56c.15 0 .28-.12.28-.28v-2.06c0-.58-.48-1.06-1.06-1.06z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="bio-seal-title">
+              <span class="badge-tag green">✓ BIOMETRIC THUMBPRINT VERIFIED</span>
+              <span class="bio-ref">${bio.token}</span>
+            </div>
+            <div class="bio-seal-desc">
+              UIDAI e-KYC Attested • Match Confidence: <strong>${bio.match_score}</strong><br>
+              Signatory: <strong>${profile.account_holder || bio.customer_name || 'Applicant'}</strong> • Verified: <strong>${bio.timestamp}</strong>
+            </div>
+            <div class="bio-seal-note">
+              🛡️ Paperless Certified: Physical printing & ink signature completely eliminated.
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      bioHtml = `
+        <div class="biometric-seal-card pending">
+          <div class="bio-seal-icon pending">
+            👆
+          </div>
+          <div>
+            <div class="bio-seal-title">
+              <span class="badge-tag amber">⚠️ BIOMETRIC THUMBPRINT ATTESTATION REQUIRED</span>
+            </div>
+            <div class="bio-seal-desc">
+              Bank policy eliminates paper printing and manual signature.<br>
+              Customer must complete <strong>Biometric Thumbprint Verification</strong> to digitally sign and forward to Counter 2.
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" style="margin-top:0.5rem;" onclick="BiometricScanner.openScanner()">
+              👆 Scan Thumbprint on Optical Sensor
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    let counter2Html = '';
+    if (app) {
+      if (app.status === 'APPROVED') {
+        counter2Html = `
+          <div class="counter-status-card approved">
+            <div class="counter-badge green">✅ COUNTER 2: APPROVED & FINALIZED</div>
+            <div class="counter-detail">
+              Approved by: <strong>${app.officer_decision?.officer_name || 'Senior Branch Operations Officer'}</strong> (ID: ${app.officer_decision?.officer_id || 'BO-88214'})<br>
+              Decision Time: <strong>${app.officer_decision?.decided_at || new Date().toLocaleString()}</strong><br>
+              Application Ref ID: <strong style="font-family:monospace;">${app.id}</strong>
+            </div>
+            ${app.officer_decision?.feedback ? `<div class="officer-feedback-quote">Officer Remarks: "${app.officer_decision.feedback}"</div>` : ''}
+          </div>
+        `;
+      } else if (app.status === 'REJECTED') {
+        counter2Html = `
+          <div class="counter-status-card rejected">
+            <div class="counter-badge red">❌ COUNTER 2: REJECTED / ACTION REQUIRED</div>
+            <div class="counter-detail">
+              Officer: <strong>${app.officer_decision?.officer_name || 'Verification Desk'}</strong> (ID: ${app.officer_decision?.officer_id || 'BO-88214'})<br>
+              Status: Application returned to customer for corrections.
+            </div>
+            <div class="officer-feedback-alert">
+              <strong>Officer Feedback Remarks:</strong><br>
+              "${app.officer_decision?.feedback || 'Please update your form details.'}"
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" style="margin-top:0.6rem;" onclick="FormsManager.resubmitCurrentApplication()">
+              ✏️ Modify Details & Re-Forward to Counter 2
+            </button>
+          </div>
+        `;
+      } else {
+        counter2Html = `
+          <div class="counter-status-card pending-queue">
+            <div class="counter-badge amber">⏳ FORWARDED TO COUNTER 2: UNDER REVIEW</div>
+            <div class="counter-detail">
+              Application ID: <strong style="font-family:monospace;">${app.id}</strong><br>
+              Desk: <strong>Counter 2 - Maker/Checker Verification Officer</strong><br>
+              Routing Time: <strong>${app.submitted_at}</strong>
+            </div>
+            <div style="font-size:0.8rem; color:#475569; margin-top:5px;">
+              Your form & biometric thumbprint are in the Counter 2 review queue. No paper printing or physical queues needed!
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      counter2Html = `
+        <div class="counter-status-card awaiting">
+          <div class="counter-badge gray">🏛️ COUNTER 2: READY FOR FORWARDING</div>
+          <div class="counter-detail">
+            Once thumbprint is verified, clicking <strong>"Forward to Counter 2"</strong> instantly routes your application to the Bank Officer for approval.
+          </div>
+          <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
+            Eliminates paper forms, manual signatures, and waiting in queues!
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="digital-attestation-container" id="digitalAttestationContainer">
+        <div class="form-section-title">5. PAPERLESS BIOMETRIC ATTESTATION & COUNTER ROUTING (NO PAPER / NO INK)</div>
+        <div class="attestation-grid">
+          ${bioHtml}
+          ${counter2Html}
+        </div>
+      </div>
+    `;
+  },
 
   forms: {
     account_opening: {
@@ -16,12 +141,12 @@ const FormsManager = {
               <div>
                 <div class="form-paper-bank" id="paperBankTitle">${p.bank_name || "STATE BANK OF INDIA"}</div>
                 <div class="form-paper-title">CUSTOMER ONBOARDING & ACCOUNT OPENING APPLICATION</div>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">FOR INDIVIDUAL RESIDENT SAVINGS / CURRENT ACCOUNTS</div>
+                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">PAPERLESS DIGITAL SUBMISSION • NO PHYSICAL INK SIGNATURE REQUIRED</div>
               </div>
               <div class="form-paper-meta">
-                <div>FORM REF: AOF-${new Date().getFullYear()}-0982</div>
+                <div>REF: AOF-${new Date().getFullYear()}-0982</div>
                 <div>DATE: <strong>${new Date().toLocaleDateString()}</strong></div>
-                <div>STATUS: <span style="color:#059669; font-weight:700;">PRE-VERIFIED VIA OCR</span></div>
+                <div>MODE: <span style="color:#059669; font-weight:700;">DIGITAL BIOMETRIC e-KYC</span></div>
               </div>
             </div>
 
@@ -44,7 +169,7 @@ const FormsManager = {
             <div class="form-section-title">2. APPLICANT PERSONAL DETAILS</div>
             <div class="paper-grid">
               <div class="paper-field col-8">
-                <label>Full Name of Account Holder (as in Passbook)</label>
+                <label>Full Name of Account Holder (from Passbook)</label>
                 <input type="text" class="paper-input" data-field="account_holder" value="${p.account_holder || ''}" placeholder="Full Name">
               </div>
               <div class="paper-field col-4">
@@ -84,16 +209,12 @@ const FormsManager = {
                 <input type="text" class="paper-input" data-field="micr_code" value="${p.micr_code || ''}" placeholder="9-digit MICR">
               </div>
               <div class="paper-field col-3">
-                <label>Account Opening / Issue Date</label>
+                <label>Passbook Issue Date</label>
                 <input type="text" class="paper-input" data-field="issue_date" value="${p.issue_date || ''}" placeholder="DD/MM/YYYY">
               </div>
             </div>
 
-            <div class="paper-signatures">
-              <div class="signature-box">Signature of Applicant<br><strong>${p.account_holder || ''}</strong></div>
-              <div class="signature-box">Verified by Branch Officer<br>(Sign & Stamp)</div>
-              <div class="signature-box">Branch Manager Approval<br>Authorized Signatory</div>
-            </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -110,7 +231,7 @@ const FormsManager = {
               <div>
                 <div class="form-paper-bank">${p.bank_name || "BANK OF INDIA"}</div>
                 <div class="form-paper-title">NEFT / RTGS / IMPS FUNDS TRANSFER VOUCHER</div>
-                <div style="font-size:0.85rem; color:#64748b;">CUSTOMER DEBIT & REMITTANCE APPLICATION</div>
+                <div style="font-size:0.85rem; color:#64748b;">DIGITAL REMITTANCE APPLICATION • PAPERLESS BIOMETRIC SETTLEMENT</div>
               </div>
               <div class="form-paper-meta">
                 <div>UTR NO: <strong>GEN-${Math.floor(100000000 + Math.random() * 900000000)}</strong></div>
@@ -166,11 +287,7 @@ const FormsManager = {
               </div>
             </div>
 
-            <div class="paper-signatures">
-              <div class="signature-box">Applicant Signature<br><strong>${p.account_holder || ''}</strong></div>
-              <div class="signature-box">Maker Officer Stamp</div>
-              <div class="signature-box">Checker Officer Stamp</div>
-            </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -187,6 +304,7 @@ const FormsManager = {
               <div>
                 <div class="form-paper-bank">${p.bank_name || "RETAIL BANK"}</div>
                 <div class="form-paper-title">SERVICE REQUEST: CHEQUE BOOK & DEBIT CARD REQUISITION</div>
+                <div style="font-size:0.85rem; color:#64748b;">DIGITAL DISPATCH REQUEST • E-KYC THUMBPRINT AUTHORIZED</div>
               </div>
               <div class="form-paper-meta">
                 <div>REQ ID: <strong>SR-${Date.now().toString().slice(-6)}</strong></div>
@@ -238,11 +356,7 @@ const FormsManager = {
               </div>
             </div>
 
-            <div class="paper-signatures">
-              <div class="signature-box">Customer Signature<br><strong>${p.account_holder || ''}</strong></div>
-              <div class="signature-box">Signature Verified By Bank Officer</div>
-              <div class="signature-box">Dispatch Tracking / AWB No</div>
-            </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -259,9 +373,10 @@ const FormsManager = {
               <div>
                 <div class="form-paper-bank">${p.bank_name || "BANK"}</div>
                 <div class="form-paper-title">PERIODIC RE-KYC / CUSTOMER PROFILE ATTESTATION</div>
+                <div style="font-size:0.85rem; color:#64748b;">CENTRAL CKYC REGISTRY ATTESTATION • NO PAPER INK SIGNATURES</div>
               </div>
               <div class="form-paper-meta">
-                <div>KYC STATUS: <strong style="color:#059669;">PASSBOOK VERIFIED</strong></div>
+                <div>KYC STATUS: <strong style="color:#059669;">PASSBOOK OCR VERIFIED</strong></div>
                 <div>DATE: <strong>${new Date().toLocaleDateString()}</strong></div>
               </div>
             </div>
@@ -289,16 +404,12 @@ const FormsManager = {
                 <input type="text" class="paper-input" data-field="email" value="${p.email || ''}">
               </div>
               <div class="paper-field col-12">
-                <label>Current Address Proof (From Passbook Stamp)</label>
+                <label>Current Address Proof (From Passbook Scan)</label>
                 <input type="text" class="paper-input" data-field="address" value="${p.address || ''}">
               </div>
             </div>
 
-            <div class="paper-signatures">
-              <div class="signature-box">Applicant Signature<br><strong>${p.account_holder || ''}</strong></div>
-              <div class="signature-box">KYC Verifier Seal</div>
-              <div class="signature-box">Central KYC (CKYC) Registry Synced</div>
-            </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -315,6 +426,7 @@ const FormsManager = {
               <div>
                 <div class="form-paper-bank">${p.bank_name || "BANK"}</div>
                 <div class="form-paper-title">TERM / FIXED DEPOSIT (FD) CREATION FORM</div>
+                <div style="font-size:0.85rem; color:#64748b;">DIGITAL TERM DEPOSIT APPOINTMENT • NO PAPERWORK</div>
               </div>
               <div class="form-paper-meta">
                 <div>FD SCHEME: <strong>CUMULATIVE REINVESTMENT</strong></div>
@@ -354,11 +466,7 @@ const FormsManager = {
               </div>
             </div>
 
-            <div class="paper-signatures">
-              <div class="signature-box">Depositor Signature<br><strong>${p.account_holder || ''}</strong></div>
-              <div class="signature-box">Bank Fixed Deposit Officer</div>
-              <div class="signature-box">TDR Certificate Issued</div>
-            </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -419,6 +527,7 @@ const FormsManager = {
                 <input type="text" class="paper-input" data-field="address" value="${p.address || ''}" style="background:#1f2937; border-color:#4b5563; color:#f9fafb;">
               </div>
             </div>
+            ${FormsManager.renderDigitalAttestationBlock(p)}
           </div>
         `;
       }
@@ -441,6 +550,8 @@ const FormsManager = {
     if (profile && profile.account_number) {
       this.animateAutoFill(profile);
     }
+
+    this.updateForwardButtonState();
   },
 
   animateAutoFill(profile) {
@@ -453,12 +564,148 @@ const FormsManager = {
           input.value = profile[fieldKey];
           input.classList.add("highlight-fill");
           setTimeout(() => input.classList.remove("highlight-fill"), 1600);
-        }, index * 40);
+        }, index * 30);
       }
     });
+  },
+
+  setBiometricVerification(bioData) {
+    this.currentBiometric = bioData;
+    this.updateFormAttestationUI();
+    this.updateForwardButtonState();
+  },
+
+  updateFormAttestationUI() {
+    const container = document.getElementById("digitalAttestationContainer");
+    if (!container) return;
+    const p = (window.App && window.App.currentProfile) ? window.App.currentProfile : {};
+    container.outerHTML = this.renderDigitalAttestationBlock(p);
+    this.updateForwardButtonState();
+  },
+
+  updateForwardButtonState() {
+    const forwardBtn = document.getElementById("forwardCounter2Btn");
+    const thumbBtn = document.getElementById("triggerThumbprintBtn");
+
+    if (this.currentBiometric && this.currentBiometric.verified) {
+      if (forwardBtn) {
+        forwardBtn.disabled = false;
+        forwardBtn.classList.remove("btn-secondary");
+        forwardBtn.classList.add("btn-primary");
+      }
+      if (thumbBtn) {
+        thumbBtn.innerHTML = "✓ Thumbprint Verified";
+        thumbBtn.classList.remove("btn-primary");
+        thumbBtn.classList.add("btn-success");
+      }
+    } else {
+      if (forwardBtn) {
+        forwardBtn.disabled = true;
+        forwardBtn.classList.add("btn-secondary");
+        forwardBtn.classList.remove("btn-primary");
+      }
+      if (thumbBtn) {
+        thumbBtn.innerHTML = "👆 2. Verify Thumbprint";
+        thumbBtn.classList.remove("btn-success");
+        thumbBtn.classList.add("btn-primary");
+      }
+    }
+  },
+
+  async forwardToCounter2() {
+    if (!this.currentBiometric || !this.currentBiometric.verified) {
+      alert("Biometric Thumbprint is required before forwarding to Counter 2. Please click 'Verify Thumbprint' on the optical sensor first.");
+      if (window.BiometricScanner) window.BiometricScanner.openScanner();
+      return;
+    }
+
+    const formInputs = {};
+    document.querySelectorAll("#activeFormContainer input[data-field]").forEach(input => {
+      formInputs[input.dataset.field] = input.value;
+    });
+
+    const activeFormDef = this.forms[this.currentFormId];
+    const formName = activeFormDef ? activeFormDef.name : "Bank Application Form";
+    const profile = window.App ? window.App.currentProfile : {};
+
+    const payload = {
+      form_id: this.currentFormId,
+      form_name: formName,
+      form_data: formInputs,
+      biometric_data: this.currentBiometric,
+      passbook_data: profile
+    };
+
+    const forwardBtn = document.getElementById("forwardCounter2Btn");
+    if (forwardBtn) {
+      forwardBtn.disabled = true;
+      forwardBtn.innerHTML = '<span class="spinner"></span> Routing to Counter 2...';
+    }
+
+    try {
+      const res = await fetch("/api/applications/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.application) {
+          this.activeApplication = data.application;
+        }
+      }
+    } catch (e) {
+      console.warn("Backend submit error, using local queue", e);
+      // Fallback local application creation
+      this.activeApplication = {
+        id: `APP-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`,
+        form_id: this.currentFormId,
+        form_name: formName,
+        form_data: formInputs,
+        passbook_data: profile,
+        biometric_data: this.currentBiometric,
+        customer_name: formInputs.account_holder || profile.account_holder || "Applicant",
+        bank_name: formInputs.bank_name || profile.bank_name || "Bank",
+        account_number: formInputs.account_number || profile.account_number || "N/A",
+        submitted_at: new Date().toLocaleDateString() + ", " + new Date().toLocaleTimeString(),
+        status: "PENDING_COUNTER_2",
+        officer_decision: null
+      };
+
+      if (window.Counter2) {
+        window.Counter2.applications.unshift(this.activeApplication);
+        window.Counter2.saveLocalBackup();
+      }
+    } finally {
+      if (forwardBtn) {
+        forwardBtn.disabled = false;
+        forwardBtn.innerHTML = "🚀 Application Forwarded to Counter 2";
+      }
+    }
+
+    this.updateFormAttestationUI();
+
+    if (window.Counter2) {
+      window.Counter2.loadApplications(true);
+    }
+
+    if (window.App) {
+      window.App.notifySuccess(`Application ${this.activeApplication.id} routed to Counter 2! You can switch to Tab 4 (Counter 2: Officer Desk) to approve or review it.`);
+    }
+  },
+
+  resubmitCurrentApplication() {
+    this.activeApplication = null;
+    this.updateFormAttestationUI();
+    if (window.App) {
+      window.App.notifySuccess("Application unlocked for corrections. Update details and click 'Forward to Counter 2' when ready.");
+    }
   },
 
   printActiveForm() {
     window.print();
   }
 };
+
+window.FormsManager = FormsManager;

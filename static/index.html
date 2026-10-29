@@ -300,6 +300,29 @@
         <!-- Rendered by FormsManager -->
       </div>
 
+      <!-- Prominent Bottom Forward Bar (Appears when Biometric is Verified) -->
+      <div id="bottomForwardContainer" class="card bottom-forward-bar no-print" style="margin-top:1.5rem; display:none; background:linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border:2px solid #10b981; box-shadow:0 10px 25px -5px rgba(16, 185, 129, 0.25);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; padding:0.5rem 0.25rem;">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; border:2px solid #34d399;">
+              👆
+            </div>
+            <div>
+              <div style="font-weight:800; font-size:1.15rem; color:#065f46; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <span>Biometric Thumbprint Verified!</span>
+                <span class="badge-tag green" id="bottomBioTokenBadge">BIO-VERIFIED</span>
+              </div>
+              <div style="font-size:0.9rem; color:#047857; margin-top:3px;">
+                Paper signature and print queue eliminated. Ready to route application directly to <strong>Counter 2 (Bank Officer Desk)</strong>.
+              </div>
+            </div>
+          </div>
+          <button id="bottomForwardCounter2Btn" class="btn btn-success" style="padding:0.9rem 2.2rem; font-size:1.1rem; font-weight:800; box-shadow:0 4px 15px rgba(5, 150, 105, 0.4); animation:pulseShadow 2s infinite ease-in-out; cursor:pointer;" onclick="FormsManager.forwardToCounter2()">
+            🚀 Forward to Counter 2 Now →
+          </button>
+        </div>
+      </div>
+
       <!-- External Autofill Bookmarklet Utility -->
       <div class="card no-print" style="margin-top:1.5rem;">
         <div class="card-header">

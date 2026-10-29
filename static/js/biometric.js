@@ -132,12 +132,18 @@ const BiometricScanner = {
 
     FormsManager.setBiometricVerification(bioData);
 
-    // Audio chime or visual prompt
+    // Audio chime or visual prompt and smooth scroll to forward button below
     setTimeout(() => {
       this.closeScanner();
       if (window.App) {
         window.App.notifySuccess("Biometric Thumbprint verified! Paper signature eliminated. Ready to forward to Counter 2.");
       }
+      setTimeout(() => {
+        const bottomTarget = document.getElementById("bottomForwardContainer") || document.getElementById("digitalAttestationContainer");
+        if (bottomTarget) {
+          bottomTarget.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
     }, 900);
   }
 };

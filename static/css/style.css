@@ -1077,3 +1077,31 @@ body {
   border-color: var(--primary);
   color: var(--primary);
 }
+
+/* Bottom Forward to Counter 2 Banner */
+.bottom-forward-bar {
+  transition: all 0.35s ease;
+  animation: slideUpFade 0.4s ease-out;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseShadow {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(5, 150, 105, 0.7);
+    transform: scale(1.025);
+  }
+}

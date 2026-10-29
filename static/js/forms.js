@@ -105,15 +105,49 @@ const FormsManager = {
         `;
       }
     } else {
-      counter2Html = `
-        <div class="counter-status-card awaiting">
-          <div class="counter-badge gray">🏛️ COUNTER 2: READY FOR FORWARDING</div>
-          <div class="counter-detail">
-            Once thumbprint is verified, clicking <strong>"Forward to Counter 2"</strong> instantly routes your application to the Bank Officer for approval.
+      if (bio && bio.verified) {
+        counter2Html = `
+          <div class="counter-status-card awaiting" style="border:2px solid #059669; background:#ecfdf5;">
+            <div class="counter-badge green animate-pulse">✓ READY: THUMBPRINT VERIFIED</div>
+            <div class="counter-detail" style="color:#065f46;">
+              Biometric token generated (<strong style="font-family:monospace;">${bio.token}</strong>). Click the button below to forward your attested form directly to Counter 2!
+            </div>
+            <button type="button" class="btn btn-success" style="width:100%; margin-top:0.75rem; padding:0.75rem 1rem; font-weight:800; font-size:1rem; box-shadow:0 4px 14px rgba(5,150,105,0.35); cursor:pointer;" onclick="FormsManager.forwardToCounter2()">
+              🚀 Forward to Counter 2 Desk Now →
+            </button>
           </div>
-          <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
-            Eliminates paper forms, manual signatures, and waiting in queues!
+        `;
+      } else {
+        counter2Html = `
+          <div class="counter-status-card awaiting">
+            <div class="counter-badge gray">🏛️ COUNTER 2: READY FOR FORWARDING</div>
+            <div class="counter-detail">
+              Once thumbprint is verified, clicking <strong>"Forward to Counter 2"</strong> instantly routes your application to the Bank Officer for approval.
+            </div>
+            <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
+              Eliminates paper forms, manual signatures, and waiting in queues!
+            </div>
           </div>
+        `;
+      }
+    }
+
+    let forwardBanner = '';
+    if (bio && bio.verified && !app) {
+      forwardBanner = `
+        <div style="margin-top:1.25rem; padding:1.1rem 1.4rem; background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:2px solid #10b981; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 4px 15px rgba(16,185,129,0.2);">
+          <div>
+            <div style="font-weight:800; font-size:1.1rem; color:#065f46; display:flex; align-items:center; gap:0.5rem;">
+              <span>✓ Biometric Verification Successful</span>
+              <span class="badge-tag green">${bio.token}</span>
+            </div>
+            <div style="font-size:0.85rem; color:#047857; margin-top:2px;">
+              Paper signature eliminated. Ready to submit to <strong>Counter 2 (Bank Officer Approval Desk)</strong>.
+            </div>
+          </div>
+          <button type="button" class="btn btn-success" style="padding:0.85rem 1.85rem; font-size:1.05rem; font-weight:800; box-shadow:0 4px 14px rgba(5,150,105,0.35); cursor:pointer;" onclick="FormsManager.forwardToCounter2()">
+            🚀 Forward to Counter 2 Now →
+          </button>
         </div>
       `;
     }
@@ -125,6 +159,7 @@ const FormsManager = {
           ${bioHtml}
           ${counter2Html}
         </div>
+        ${forwardBanner}
       </div>
     `;
   },
@@ -586,6 +621,9 @@ const FormsManager = {
   updateForwardButtonState() {
     const forwardBtn = document.getElementById("forwardCounter2Btn");
     const thumbBtn = document.getElementById("triggerThumbprintBtn");
+    const bottomContainer = document.getElementById("bottomForwardContainer");
+    const bottomTokenBadge = document.getElementById("bottomBioTokenBadge");
+    const bottomBtn = document.getElementById("bottomForwardCounter2Btn");
 
     if (this.currentBiometric && this.currentBiometric.verified) {
       if (forwardBtn) {
@@ -598,6 +636,40 @@ const FormsManager = {
         thumbBtn.classList.remove("btn-primary");
         thumbBtn.classList.add("btn-success");
       }
+      if (bottomContainer) {
+        bottomContainer.style.display = "block";
+      }
+      if (bottomTokenBadge) {
+        bottomTokenBadge.textContent = this.currentBiometric.token;
+      }
+      if (bottomBtn) {
+        if (this.activeApplication) {
+          if (this.activeApplication.status === "PENDING_COUNTER_2") {
+            bottomBtn.textContent = "🔎 View in Counter 2 Queue →";
+            bottomBtn.className = "btn btn-primary";
+            bottomBtn.style.animation = "none";
+            bottomBtn.disabled = false;
+            bottomBtn.onclick = () => window.App && window.App.goToStep(4);
+          } else if (this.activeApplication.status === "APPROVED") {
+            bottomBtn.textContent = "✓ Application Approved";
+            bottomBtn.className = "btn btn-success";
+            bottomBtn.style.animation = "none";
+            bottomBtn.disabled = true;
+          } else if (this.activeApplication.status === "REJECTED") {
+            bottomBtn.textContent = "✏️ Re-Forward to Counter 2 →";
+            bottomBtn.className = "btn btn-danger";
+            bottomBtn.style.animation = "pulseShadow 2s infinite ease-in-out";
+            bottomBtn.disabled = false;
+            bottomBtn.onclick = () => FormsManager.resubmitCurrentApplication();
+          }
+        } else {
+          bottomBtn.textContent = "🚀 Forward to Counter 2 Now →";
+          bottomBtn.className = "btn btn-success";
+          bottomBtn.style.animation = "pulseShadow 2s infinite ease-in-out";
+          bottomBtn.disabled = false;
+          bottomBtn.onclick = () => FormsManager.forwardToCounter2();
+        }
+      }
     } else {
       if (forwardBtn) {
         forwardBtn.disabled = true;
@@ -608,6 +680,9 @@ const FormsManager = {
         thumbBtn.innerHTML = "👆 2. Verify Thumbprint";
         thumbBtn.classList.remove("btn-success");
         thumbBtn.classList.add("btn-primary");
+      }
+      if (bottomContainer) {
+        bottomContainer.style.display = "none";
       }
     }
   },
@@ -637,9 +712,15 @@ const FormsManager = {
     };
 
     const forwardBtn = document.getElementById("forwardCounter2Btn");
+    const bottomBtn = document.getElementById("bottomForwardCounter2Btn");
+
     if (forwardBtn) {
       forwardBtn.disabled = true;
       forwardBtn.innerHTML = '<span class="spinner"></span> Routing to Counter 2...';
+    }
+    if (bottomBtn) {
+      bottomBtn.disabled = true;
+      bottomBtn.innerHTML = '<span class="spinner"></span> Routing to Counter 2...';
     }
 
     try {
@@ -681,6 +762,10 @@ const FormsManager = {
       if (forwardBtn) {
         forwardBtn.disabled = false;
         forwardBtn.innerHTML = "🚀 Application Forwarded to Counter 2";
+      }
+      if (bottomBtn) {
+        bottomBtn.disabled = false;
+        bottomBtn.innerHTML = "🔎 View in Counter 2 Queue →";
       }
     }
 
